@@ -1,0 +1,152 @@
+pip install colorama
+from colorama import init, Fore, Style
+
+# Initialize colorama
+init(autoreset=True)
+
+class BillingSystem:
+    def __init__(self):
+        # Item database (item_name: price)
+        self.items = {
+            "Apple": 2.50,
+            "Banana": 1.20,
+            "Orange": 3.00,
+            "Milk": 1.50,
+            "Eggs": 2.00,
+            "Bread": 2.75
+        }
+        self.cart = {}  # Store the selected items and their quantities
+        self.tax_rate = 0.1  # 10% tax rate
+        self.discount_threshold = 20  # Discount applies if total > $20
+        self.discount_rate = 0.1  # 10% discount if total > $20
+
+    def show_items(self):
+        print(Fore.CYAN + "\nAvailable items and prices:")
+        print(Fore.YELLOW + "-"*50)
+        for item, price in self.items.items():
+            print(f"{Fore.GREEN}{item}: {Fore.RED}${price:.2f}")
+        print(Fore.YELLOW + "-"*50)
+
+    def add_to_cart(self):
+        while True:
+            item = input(Fore.MAGENTA + "\nEnter the item you want to add to the cart (or type 'done' to finish): ").capitalize()
+            if item == 'Done':
+                break
+            elif item not in self.items:
+                print(Fore.RED + "Item not available. Please choose a valid item.")
+                continue
+            quantity = self.get_positive_integer(f"Enter the quantity for {item}: ")
+            if item in self.cart:
+                self.cart[item] += quantity
+            else:
+                self.cart[item] = quantity
+            print(f"{Fore.GREEN}{item} added to the cart.")
+
+    def remove_from_cart(self):
+        while True:
+            item = input(Fore.MAGENTA + "\nEnter the item you want to remove from the cart (or type 'done' to finish): ").capitalize()
+            if item == 'Done':
+                break
+            elif item not in self.cart:
+                print(Fore.RED + f"{item} is not in the cart.")
+                continue
+            quantity = self.get_positive_integer(f"Enter the quantity of {item} you want to remove: ")
+            if quantity >= self.cart[item]:
+                del self.cart[item]
+                print(f"{Fore.GREEN}All {item} removed from the cart.")
+            else:
+                self.cart[item] -= quantity
+                print(f"{Fore.GREEN}{quantity} {item}(s) removed from the cart.")
+
+    def get_positive_integer(self, prompt):
+        while True:
+            try:
+                value = int(input(prompt))
+                if value <= 0:
+                    raise ValueError
+                return value
+            except ValueError:
+                print(Fore.RED + "Please enter a valid positive integer.")
+
+    def calculate_total(self):
+        total = 0
+        print(Fore.CYAN + "\nYour Cart:")
+        print(Fore.YELLOW + "-"*50)
+        for item, quantity in self.cart.items():
+            item_price = self.items[item]
+            item_total = item_price * quantity
+            print(f"{Fore.GREEN}{item}: {Fore.YELLOW}{quantity} x ${item_price:.2f} = ${item_total:.2f}")
+            total += item_total
+
+        tax = total * self.tax_rate
+        total_with_tax = total + tax
+
+        # Apply discount if total exceeds the threshold
+        if total > self.discount_threshold:
+            discount = total * self.discount_rate
+            total_with_tax -= discount
+            print(Fore.CYAN + f"\n{Fore.RED}Discount Applied: -${discount:.2f}")
+
+        print(Fore.YELLOW + "-"*50)
+        print(f"\nSubtotal: {Fore.YELLOW}${total:.2f}")
+        print(f"Tax ({self.tax_rate * 100}%): {Fore.YELLOW}${tax:.2f}")
+        print(f"Total (with tax): {Fore.YELLOW}${total_with_tax:.2f}")
+        return total_with_tax
+
+    def choose_payment_method(self, total):
+        print(Fore.CYAN + "\nChoose a payment method:")
+        print(Fore.MAGENTA + "1. Cash")
+        print(Fore.MAGENTA + "2. Card")
+        while True:
+            choice = input(Fore.MAGENTA + "Enter choice (1 or 2): ")
+            if choice == '1':
+                print(f"{Fore.GREEN}Payment of ${total:.2f} received in cash. Thank you!")
+                break
+            elif choice == '2':
+                print(f"{Fore.GREEN}Payment of ${total:.2f} received via card. Thank you!")
+                break
+            else:
+                print(Fore.RED + "Invalid choice. Please enter 1 for Cash or 2 for Card.")
+
+    def generate_receipt(self, total):
+        print(Fore.CYAN + "\n--- Receipt ---")
+        print(Fore.YELLOW + "-"*50)
+        print("Items Purchased:")
+        for item, quantity in self.cart.items():
+            item_price = self.items[item]
+            item_total = item_price * quantity
+            print(f"{Fore.GREEN}{item}: {Fore.YELLOW}{quantity} x ${item_price:.2f} = ${item_total:.2f}")
+
+        print(Fore.YELLOW + "-"*50)
+        print(f"\nSubtotal: {Fore.YELLOW}${sum(self.items[item] * quantity for item, quantity in self.cart.items()):.2f}")
+        print(f"Tax: {Fore.YELLOW}${total * self.tax_rate / (1 + self.tax_rate):.2f}")
+        print(f"Discount: {Fore.YELLOW}${total * self.discount_rate if total > self.discount_threshold else 0:.2f}")
+        print(f"Total: {Fore.YELLOW}${total:.2f}")
+        print(Fore.GREEN + "Thank you for shopping with us!")
+        print(Fore.YELLOW + "-"*50)
+
+    def checkout(self):
+        self.show_items()
+
+        while True:
+            action = input(Fore.CYAN + "\nWould you like to (A)dd to cart, (R)emove from cart, or (D)one: ").lower()
+            if action == 'a':
+                self.add_to_cart()
+            elif action == 'r':
+                self.remove_from_cart()
+            elif action == 'd':
+                break
+            else:
+                print(Fore.RED + "Invalid option. Please choose 'A' to add, 'R' to remove, or 'D' to finish.")
+
+        total = self.calculate_total()
+        self.choose_payment_method(total)
+        self.generate_receipt(total)
+        print(Fore.GREEN + "Thank you for your purchase!")
+
+
+# Main function to run the billing system
+if __name__ == "__main__":
+    print(Fore.CYAN + "Welcome to the Python Billing System!")
+    billing_system = BillingSystem()
+    billing_system.checkout()
